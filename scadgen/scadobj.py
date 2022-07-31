@@ -6,7 +6,28 @@ from typing import Generator
 _GENSCAD_GLOBAL_CONTEXT = None
 
 
+def format_openscad_decl(keyword, depth, args, kwargs):
+    '''Format an OpenSCAD keyword and args.'''
+    str_args = [str(a) for a in args]
+    str_kwargs = [f'{k}={v}' for k, v in kwargs.items()]
+    args = ', '.join(str_args+str_kwargs)
+    return '  '*(depth-1) + f'{keyword}({args})'
+
+
+def print_tree(o, level=0):
+    '''Print the object tree rooted at a context object.'''
+    print('  '*level + str(repr(o)))
+    try:
+        for child in o.objs:
+            print_tree(child, level=level+1)
+    except AttributeError:
+        # ScadObj does not have a .objs member.
+        pass
+
+
 class ScadEntity(abc.ABC):
+    '''Parent entity for any object that generates an OpenSCAD statement.'''
+
     def gen(self) -> str:
         return '\n'.join(list(self._generate()))
 
@@ -16,6 +37,7 @@ class ScadEntity(abc.ABC):
 
 
 class ScadContext(contextlib.AbstractContextManager, ScadEntity):
+    '''Context manager.'''
     _NAME = '???'
 
     def __init__(self, *args, **kwargs):
@@ -49,14 +71,9 @@ class ScadContext(contextlib.AbstractContextManager, ScadEntity):
             yield o.gen()
 
 
-def format_openscad_decl(keyword, depth, args, kwargs):
-    str_args = [str(a) for a in args]
-    str_kwargs = [f'{k}={v}' for k, v in kwargs.items()]
-    args = ', '.join(str_args+str_kwargs)
-    return '  '*(depth-1) + f'{keyword}({args})'
-
-
 class ScadOperation(ScadContext):
+    '''An OpenSCAD operation that acts on objects in its brace block.'''
+
     def __init__(self, *args, **kwargs):
         super(ScadOperation, self).__init__(*args, **kwargs)
         global _GENSCAD_GLOBAL_CONTEXT
@@ -73,13 +90,8 @@ class ScadOperation(ScadContext):
         yield '  ' * (self.depth-1) + '}'
 
 
-def define_ScadOperation(name):
-    class _ScadOperation(ScadOperation):
-        _NAME = name
-    return _ScadOperation
-
-
 class ScadObj(ScadEntity):
+    '''An OpenSCAD object, terminated by a semicolon (no brace block).'''
     _NAME = '???'
 
     def __init__(self, *args, **kwargs):
@@ -96,16 +108,15 @@ class ScadObj(ScadEntity):
         yield format_openscad_decl(self._NAME, self.depth, self.args, self.kwargs) + ';'
 
 
+def define_ScadOperation(name):
+    '''Helper function to define a named ScadOperation.'''
+    class _ScadOperation(ScadOperation):
+        _NAME = name
+    return _ScadOperation
+
+
 def define_ScadObj(name):
+    '''Helper function to define a named ScadObj.'''
     class _ScadObj(ScadObj):
         _NAME = name
     return _ScadObj
-
-
-def print_tree(o, level=0):
-    print('  '*level + str(repr(o)))
-    try:
-        for child in o.objs:
-            print_tree(child, level=level+1)
-    except AttributeError:
-        pass
