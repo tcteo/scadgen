@@ -1,6 +1,7 @@
 import unittest
 import textwrap
 import scadgen as s
+from scadgen import scadobj
 
 
 class TestContext(unittest.TestCase):
@@ -8,6 +9,15 @@ class TestContext(unittest.TestCase):
         '''Test that we can enter/exit a context.'''
         with s.ScadContext():
             pass
+
+    def test_object_no_context(self):
+        with self.assertRaises(scadobj.MissingScadContextException):
+            s.cube(size=[10, 10, 10], center=False)
+
+    def test_operation_no_context(self):
+        with self.assertRaises(scadobj.MissingScadContextException):
+            with s.translate([10, 10, 10]):
+                pass
 
     def test_basic_obj(self):
         '''Basic usage.'''

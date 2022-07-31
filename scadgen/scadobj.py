@@ -51,6 +51,8 @@ class ScadContext(contextlib.AbstractContextManager, ScadEntity):
         self.genscad_parent_obj = _GENSCAD_GLOBAL_CONTEXT
         if self.genscad_parent_obj is not None:
             self.genscad_parent_obj.add_obj(self)
+            # WARNING: depth is only set upon entry, which constrains when it can be used accurately
+            # Can probably use it at generate-time, but not while building the model.
             self.depth = self.genscad_parent_obj.depth+1
         _GENSCAD_GLOBAL_CONTEXT = self
         return self
@@ -75,10 +77,13 @@ class ScadOperation(ScadContext):
     '''An OpenSCAD operation that acts on objects in its brace block.'''
 
     def __init__(self, *args, **kwargs):
-        super(ScadOperation, self).__init__(*args, **kwargs)
         global _GENSCAD_GLOBAL_CONTEXT
+        if not _GENSCAD_GLOBAL_CONTEXT:
+            raise MissingScadContextException('No enclosing ScadContext.')
+        super(ScadOperation, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
+
 
     def __repr__(self) -> str:
         return(f'ScadOperation_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
@@ -96,6 +101,8 @@ class ScadObj(ScadEntity):
 
     def __init__(self, *args, **kwargs):
         global _GENSCAD_GLOBAL_CONTEXT
+        if not _GENSCAD_GLOBAL_CONTEXT:
+            raise MissingScadContextException('No enclosing ScadContext.')
         self.args = args
         self.kwargs = kwargs
         self.depth = _GENSCAD_GLOBAL_CONTEXT.depth+1
@@ -120,3 +127,7 @@ def define_ScadObj(name):
     class _ScadObj(ScadObj):
         _NAME = name
     return _ScadObj
+
+
+class MissingScadContextException(Exception):
+    pass
