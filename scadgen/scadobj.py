@@ -1,39 +1,66 @@
+from __future__ import annotations
 import contextlib
 import abc
-from typing import Generator
+from typing import Generator, Optional
 
 # The top level global context object.
 _GENSCAD_GLOBAL_CONTEXT = None
 
 
+def arg_value_to_str(v):
+    '''Convert from Python to OpenSCAD representation.'''
+    if v == True:
+        return 'true'
+    elif v == False:
+        return 'false'
+    elif isinstance(v, str):
+        return '\'+str(v)+\''
+    else:
+        return v
+
+
 def format_openscad_decl(keyword, depth, args, kwargs):
     '''Format an OpenSCAD keyword and args.'''
     str_args = [str(a) for a in args]
-    str_kwargs = [f'{k}={v}' for k, v in kwargs.items()]
+    str_kwargs = [f'{k}={arg_value_to_str(v)}' for k, v in kwargs.items()]
     args = ', '.join(str_args+str_kwargs)
     return '  '*(depth-1) + f'{keyword}({args})'
 
 
-def print_tree(o, level=0):
+def print_tree(o):
     '''Print the object tree rooted at a context object.'''
-    print('  '*level + str(repr(o)))
+    print('  '*o.depth() + str(repr(o)))
+    try:
+        for module in o.modules:
+            print_tree(module)
+    except AttributeError:
+        pass
     try:
         for child in o.objs:
-            print_tree(child, level=level+1)
+            print_tree(child)
     except AttributeError:
         # ScadObj does not have a .objs member.
         pass
 
 
 class ScadEntity(abc.ABC):
-    '''Parent entity for any object that generates an OpenSCAD statement.'''
+    '''Parent class for any object that generates an OpenSCAD statement.'''
+    parent_entity: Optional[ScadEntity] = None
 
     def gen(self) -> str:
-        return '\n'.join(list(self._generate()))
+        lines = list(self._generate())
+        # lines = [l + ' // depth: ' + str(self.depth()) for l in lines]
+        return '\n'.join(lines)
 
     @abc.abstractmethod
     def _generate() -> Generator[str, None, None]:
         raise NotImplementedError()
+
+    def depth(self):
+        if self.parent_entity is None:
+            return 0
+        else:
+            return 1 + self.parent_entity.depth()
 
 
 class ScadContext(contextlib.AbstractContextManager, ScadEntity):
@@ -41,36 +68,66 @@ class ScadContext(contextlib.AbstractContextManager, ScadEntity):
     _NAME = '???'
 
     def __init__(self, *args, **kwargs):
-        self.depth = 0
         self.args = args
         self.kwargs = kwargs
         self.objs = []
+        self.modules = []
 
     def __enter__(self):
         global _GENSCAD_GLOBAL_CONTEXT
-        self.genscad_parent_obj = _GENSCAD_GLOBAL_CONTEXT
-        if self.genscad_parent_obj is not None:
-            self.genscad_parent_obj.add_obj(self)
-            # WARNING: depth is only set upon entry, which constrains when it can be used accurately
-            # Can probably use it at generate-time, but not while building the model.
-            self.depth = self.genscad_parent_obj.depth+1
+        self.parent_entity = _GENSCAD_GLOBAL_CONTEXT
+        if self.parent_entity is not None:
+            self.parent_entity.add_obj(self)
         _GENSCAD_GLOBAL_CONTEXT = self
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         global _GENSCAD_GLOBAL_CONTEXT
-        _GENSCAD_GLOBAL_CONTEXT = self.genscad_parent_obj
+        _GENSCAD_GLOBAL_CONTEXT = self.parent_entity
         return False
 
     def __repr__(self) -> str:
         return(f'ScadContext_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
 
+    def _generate(self) -> Generator[str, None, None]:
+        for m in self.modules:
+            yield m.gen()
+        for o in self.objs:
+            yield o.gen()
+
     def add_obj(self, obj: ScadEntity):
         self.objs.append(obj)
 
+    def add_module(self, module: ScadModule):
+        if self.parent_entity:
+            self.parent_entity.add_module(module)
+        else:
+            if module._NAME not in [m._NAME for m in self.modules]:
+                self.modules.append(module)
+                module.parent_entity = self
+
+
+class ScadModule(ScadContext, ScadEntity):
+    def __init__(self, name, *args, **kwargs):
+        super(ScadModule, self).__init__(*args, **kwargs)
+        self._NAME = name
+        self.parent_entity = _GENSCAD_GLOBAL_CONTEXT
+        self.obj_cls = define_ScadObj(self._NAME)
+
+    def __repr__(self) -> str:
+        return(f'ScadModule_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
+
+    def __call__(self, *args, **kwargs):
+        # Calling a module inserts a ScadObj with that name.
+        self.obj_cls(*args, **kwargs)
+        # We also need to make sure the module is registered with the context.
+        _GENSCAD_GLOBAL_CONTEXT.add_module(self)
+
     def _generate(self) -> Generator[str, None, None]:
+        yield '  ' * (self.depth()-1) + f'module {self._NAME}() {{'
         for o in self.objs:
             yield o.gen()
+        yield '  ' * (self.depth()-1) + '}'
 
 
 class ScadOperation(ScadContext):
@@ -84,15 +141,14 @@ class ScadOperation(ScadContext):
         self.args = args
         self.kwargs = kwargs
 
-
     def __repr__(self) -> str:
         return(f'ScadOperation_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
 
     def _generate(self) -> Generator[str, None, None]:
-        yield format_openscad_decl(self._NAME, self.depth, self.args, self.kwargs) + ' {'
+        yield format_openscad_decl(self._NAME, self.depth(), self.args, self.kwargs) + ' {'
         for o in self.objs:
             yield o.gen()
-        yield '  ' * (self.depth-1) + '}'
+        yield '  ' * (self.depth()-1) + '}'
 
 
 class ScadObj(ScadEntity):
@@ -105,14 +161,14 @@ class ScadObj(ScadEntity):
             raise MissingScadContextException('No enclosing ScadContext.')
         self.args = args
         self.kwargs = kwargs
-        self.depth = _GENSCAD_GLOBAL_CONTEXT.depth+1
         _GENSCAD_GLOBAL_CONTEXT.add_obj(self)
+        self.parent_entity = _GENSCAD_GLOBAL_CONTEXT
 
     def __repr__(self) -> str:
         return(f'ScadObj_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
 
     def _generate(self) -> Generator[str, None, None]:
-        yield format_openscad_decl(self._NAME, self.depth, self.args, self.kwargs) + ';'
+        yield format_openscad_decl(self._NAME, self.depth(), self.args, self.kwargs) + ';'
 
 
 def define_ScadOperation(name):
