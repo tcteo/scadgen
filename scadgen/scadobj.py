@@ -108,6 +108,7 @@ class ScadContext(contextlib.AbstractContextManager, ScadEntity):
 
 
 class ScadModule(ScadContext, ScadEntity):
+    # TODO: Module parameters.
     def __init__(self, name, *args, **kwargs):
         super(ScadModule, self).__init__(*args, **kwargs)
         self._NAME = name
@@ -120,8 +121,10 @@ class ScadModule(ScadContext, ScadEntity):
     def __call__(self, *args, **kwargs):
         # Calling a module inserts a ScadObj with that name.
         self.obj_cls(*args, **kwargs)
-        # We also need to make sure the module is registered with the context.
+         # We also need to make sure the module and its dependencies are registered.
         _GENSCAD_GLOBAL_CONTEXT.add_module(self)
+        for m in self.modules:
+          _GENSCAD_GLOBAL_CONTEXT.add_module(m)
 
     def _generate(self) -> Generator[str, None, None]:
         yield '  ' * (self.depth()-1) + f'module {self._NAME}() {{'

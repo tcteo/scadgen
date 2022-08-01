@@ -17,10 +17,6 @@ class TestModule(unittest.TestCase):
             with s.translate([100, 0, 0]):
                 cylcube()
         output = model.gen()
-        print('_____ model tree _____ ')
-        s.print_tree(model)
-        print('_____ model output _____ ')
-        print(output)
         self.assertEqual(output, textwrap.dedent('''\
             module cylcube() {
               cylinder(20, r=20);
@@ -31,6 +27,43 @@ class TestModule(unittest.TestCase):
             cylcube();
             translate([100, 0, 0]) {
               cylcube();
+            }'''))
+
+    def test_dependent_module(self):
+        '''A module that depends on another module.'''
+        with scadobj.ScadModule(name='cylcube') as cylcube:
+            s.cylinder(20, r=20)
+            with s.translate([0, 0, 25]):
+                s.cube(size=[10, 10, 10], center=True)
+        with scadobj.ScadModule(name='doublecylcube') as doublecylcube:
+            cylcube()
+            with s.translate([0, 0, 30]):
+                cylcube()
+        with s.ScadContext() as model:
+            doublecylcube()
+            with s.translate([100, 0, 0]):
+                doublecylcube()
+        output = model.gen()
+        print('_____ model tree _____ ')
+        s.print_tree(model)
+        print('_____ model output _____ ')
+        print(output)
+        self.assertEqual(output, textwrap.dedent('''\
+            module doublecylcube() {
+              cylcube();
+              translate([0, 0, 30]) {
+                cylcube();
+              }
+            }
+            module cylcube() {
+              cylinder(20, r=20);
+              translate([0, 0, 25]) {
+                cube(size=[10, 10, 10], center=true);
+              }
+            }
+            doublecylcube();
+            translate([100, 0, 0]) {
+              doublecylcube();
             }'''))
 
 
