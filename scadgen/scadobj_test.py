@@ -44,10 +44,10 @@ class TestModule(unittest.TestCase):
             with s.translate([100, 0, 0]):
                 doublecylcube()
         output = model.gen()
-        print('_____ model tree _____ ')
-        s.print_tree(model)
-        print('_____ model output _____ ')
-        print(output)
+        # print('_____ model tree _____ ')
+        # s.print_tree(model)
+        # print('_____ model output _____ ')
+        # print(output)
         self.assertEqual(output, textwrap.dedent('''\
             module doublecylcube() {
               cylcube();
