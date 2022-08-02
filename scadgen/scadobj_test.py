@@ -1,13 +1,12 @@
 import unittest
 import textwrap
 import scadgen as s
-from scadgen import scadobj
 
 
 class TestModule(unittest.TestCase):
     def test_basic_module(self):
         '''Basic module usage.'''
-        with scadobj.ScadModule(name='cylcube') as cylcube:
+        with s.ScadModule(name='cylcube') as cylcube:
             # A module comprising a cylinder with a cube stacked on top of it
             s.cylinder(20, r=20)
             with s.translate([0, 0, 25]):
@@ -31,11 +30,11 @@ class TestModule(unittest.TestCase):
 
     def test_dependent_module(self):
         '''A module that depends on another module.'''
-        with scadobj.ScadModule(name='cylcube') as cylcube:
+        with s.ScadModule(name='cylcube') as cylcube:
             s.cylinder(20, r=20)
             with s.translate([0, 0, 25]):
                 s.cube(size=[10, 10, 10], center=True)
-        with scadobj.ScadModule(name='doublecylcube') as doublecylcube:
+        with s.ScadModule(name='doublecylcube') as doublecylcube:
             cylcube()
             with s.translate([0, 0, 30]):
                 cylcube()
@@ -74,11 +73,11 @@ class TestContext(unittest.TestCase):
             pass
 
     def test_object_no_context(self):
-        with self.assertRaises(scadobj.MissingScadContextException):
+        with self.assertRaises(s.MissingScadContextException):
             s.cube(size=[10, 10, 10], center=False)
 
     def test_operation_no_context(self):
-        with self.assertRaises(scadobj.MissingScadContextException):
+        with self.assertRaises(s.MissingScadContextException):
             with s.translate([10, 10, 10]):
                 pass
 

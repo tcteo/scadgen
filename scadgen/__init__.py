@@ -1,6 +1,8 @@
 from scadgen import scadobj
 
 ScadContext = scadobj.ScadContext
+ScadModule = scadobj.ScadModule
+MissingScadContextException = scadobj.MissingScadContextException
 
 circle = scadobj.define_ScadObj('circle')
 square = scadobj.define_ScadObj('square')
