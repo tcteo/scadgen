@@ -4,6 +4,7 @@ import scadgen as s
 
 
 class TestModule(unittest.TestCase):
+  
     def test_basic_module(self):
         '''Basic module usage.'''
         with s.ScadModule(name='cylcube') as cylcube:
@@ -67,6 +68,7 @@ class TestModule(unittest.TestCase):
 
 
 class TestContext(unittest.TestCase):
+
     def test_context_basic(self):
         '''Test that we can enter/exit a context.'''
         with s.ScadContext():
