@@ -107,7 +107,7 @@ class ScadContext(contextlib.AbstractContextManager, ScadEntity):
                 module.parent_entity = self
 
 
-class ScadModule(ScadContext, ScadEntity):
+class ScadModule(ScadContext):
     # TODO: Module parameters.
     def __init__(self, name, *args, **kwargs):
         super(ScadModule, self).__init__(*args, **kwargs)
