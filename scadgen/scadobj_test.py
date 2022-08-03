@@ -149,3 +149,15 @@ class TestContext(unittest.TestCase):
                 cylinder(30, r=8, center=true);
               }
             }'''))
+
+
+class TestValueconversion(unittest.TestCase):
+
+    def test_basic_obj(self):
+        '''Basic usage.'''
+        with s.ScadContext() as model:
+            s.cube(size=[10, 10, 10], center=False,
+                   some_str_arg='foo', some_float_arg=0.333)
+        output = model.gen()
+        self.assertEqual(output, textwrap.dedent('''\
+            cube(size=[10, 10, 10], center=false, some_str_arg='foo', some_float_arg=0.333);'''))

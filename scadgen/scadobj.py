@@ -14,9 +14,9 @@ def arg_value_to_str(v):
     elif v == False:
         return 'false'
     elif isinstance(v, str):
-        return '\'+str(v)+\''
+        return '\'' + str(v) + '\''
     else:
-        return v
+        return str(v)
 
 
 def format_openscad_decl(keyword, depth, args, kwargs):
@@ -121,10 +121,10 @@ class ScadModule(ScadContext):
     def __call__(self, *args, **kwargs):
         # Calling a module inserts a ScadObj with that name.
         self.obj_cls(*args, **kwargs)
-         # We also need to make sure the module and its dependencies are registered.
+        # We also need to make sure the module and its dependencies are registered.
         _GENSCAD_GLOBAL_CONTEXT.add_module(self)
         for m in self.modules:
-          _GENSCAD_GLOBAL_CONTEXT.add_module(m)
+            _GENSCAD_GLOBAL_CONTEXT.add_module(m)
 
     def _generate(self) -> Generator[str, None, None]:
         yield '  ' * (self.depth()-1) + f'module {self._NAME}() {{'
