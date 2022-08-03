@@ -155,8 +155,8 @@ class TestContext(unittest.TestCase):
 
 class TestValueconversion(unittest.TestCase):
 
-    def test_basic_obj(self):
-        '''Basic usage.'''
+    def test_value_conversion(self):
+        '''Param value conversion from Python to OpenSCAD'''
         with s.ScadContext() as model:
             s.cube(size=[10, 10, 10], center=False,
                    some_str_arg='foo', some_float_arg=0.333)
