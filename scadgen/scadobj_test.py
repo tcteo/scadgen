@@ -4,7 +4,7 @@ import scadgen as s
 
 
 class TestModule(unittest.TestCase):
-  
+
     def test_basic_module(self):
         '''Basic module usage.'''
         with s.ScadModule(name='cylcube') as cylcube:
