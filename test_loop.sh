@@ -1,6 +1,6 @@
 #!/bin/bash
 
-watch_dirs=("scadgen")
+watch_dirs=("src")
 
 inotifywait -e close_write,moved_to,create,delete,moved_from -r -m "${watch_dirs[@]}" |
 while read -r directory events filename; do
