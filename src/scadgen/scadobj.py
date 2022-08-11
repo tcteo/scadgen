@@ -21,7 +21,7 @@ def arg_value_to_str(v):
 
 def format_openscad_decl(keyword, depth, args, kwargs):
     '''Format an OpenSCAD keyword and args.'''
-    str_args = [str(a) for a in args]
+    str_args = [arg_value_to_str(a) for a in args]
     str_kwargs = [f'{k}={arg_value_to_str(v)}' for k, v in kwargs.items()]
     args = ', '.join(str_args+str_kwargs)
     return '  '*(depth-1) + f'{keyword}({args})'

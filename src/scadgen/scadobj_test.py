@@ -163,3 +163,14 @@ class TestValueconversion(unittest.TestCase):
         output = model.gen()
         self.assertEqual(output, textwrap.dedent('''\
             cube(size=[10, 10, 10], center=false, some_str_arg='foo', some_float_arg=0.333);'''))
+
+    def test_value_conversion_args(self):
+        '''Param string conversion.'''
+        with s.ScadContext() as model:
+            with s.color("blue"):
+                s.cube()
+        output = model.gen()
+        self.assertEqual(output, textwrap.dedent('''\
+            color('blue') {
+              cube();
+            }'''))
