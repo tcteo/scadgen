@@ -162,7 +162,7 @@ class TestValueconversion(unittest.TestCase):
                    some_str_arg='foo', some_float_arg=0.333)
         output = model.gen()
         self.assertEqual(output, textwrap.dedent('''\
-            cube(size=[10, 10, 10], center=false, some_str_arg='foo', some_float_arg=0.333);'''))
+            cube(size=[10, 10, 10], center=false, some_str_arg="foo", some_float_arg=0.333);'''))
 
     def test_value_conversion_args(self):
         '''Param string conversion.'''
@@ -171,6 +171,6 @@ class TestValueconversion(unittest.TestCase):
                 s.cube()
         output = model.gen()
         self.assertEqual(output, textwrap.dedent('''\
-            color('blue') {
+            color("blue") {
               cube();
             }'''))

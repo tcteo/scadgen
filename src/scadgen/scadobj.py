@@ -14,7 +14,7 @@ def arg_value_to_str(v):
     elif v == False:
         return 'false'
     elif isinstance(v, str):
-        return '\'' + str(v) + '\''
+        return '"' + str(v) + '"'
     else:
         return str(v)
 
