@@ -174,3 +174,17 @@ class TestValueconversion(unittest.TestCase):
             color("blue") {
               cube();
             }'''))
+
+# TODO implement this
+# class TestOperationAdd(unittest.TestCase):
+#     def test_context_add(self):
+#         '''Ability to use the + operator with ScadContexts as a shorthand.'''
+#         with s.ScadContext() as model1:
+#             with s.translate([1,1,1]):
+#                 with s.translate([2,2,2]):
+#                     with s.translate([3,3,3]):
+#                         s.cube()
+#         with s.ScadContext() as model2:
+#             with s.translate([1,1,1])+s.translate([2,2,2])+s.translate([3,3,3]):
+#                 s.cube()
+#         self.assertEqual(model1.gen(), model2.gen())
