@@ -3,8 +3,6 @@ import contextlib
 import abc
 from typing import Generator, Optional
 
-from attr import attr
-
 # The top level global context object.
 _GENSCAD_GLOBAL_CONTEXT = None
 
