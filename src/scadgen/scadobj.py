@@ -3,6 +3,8 @@ import contextlib
 import abc
 from typing import Generator, Optional
 
+from attr import attr
+
 # The top level global context object.
 _GENSCAD_GLOBAL_CONTEXT = None
 
@@ -143,6 +145,7 @@ class ScadOperation(ScadContext):
         super(ScadOperation, self).__init__(*args, **kwargs)
         self.args = args
         self.kwargs = kwargs
+        self.is_nested = False
 
     def __repr__(self) -> str:
         return(f'ScadOperation_{self._NAME}(args={self.args}, kwargs={self.kwargs})')
@@ -152,6 +155,45 @@ class ScadOperation(ScadContext):
         for o in self.objs:
             yield o.gen()
         yield '  ' * (self.depth()-1) + '}'
+
+    def __add__(self, o: ScadOperation):
+        return ScadCompositeOperation(self, o)
+
+
+class ScadCompositeOperation(ScadOperation):
+    # Enables composite operations using '+' shorthand.
+    def __init__(self, a, b, *args, **kwargs):
+        super(ScadCompositeOperation, self).__init__(*args, **kwargs)
+        self.a = a
+        self.b = b
+        self.a.objs = [self.b]
+        self.b.parent_entity = self.a
+        self.last = self.b
+
+    def __repr__(self) -> str:
+        return(f'ScadCompositeOperation({self.a}, {self.b})(args={self.args}, kwargs={self.kwargs})')
+
+    def __add__(self, o: ScadOperation):
+        self.last.add_obj(o)
+        o.parent_entity = self.last
+        self.last = o
+        return self
+
+    def add_obj(self, obj: ScadEntity):
+        return self.b.add_obj(obj)
+
+    def __enter__(self):
+        global _GENSCAD_GLOBAL_CONTEXT
+        self.a.parent_entity = _GENSCAD_GLOBAL_CONTEXT
+        if self.a.parent_entity is not None:
+            self.a.parent_entity.add_obj(self.a)
+        _GENSCAD_GLOBAL_CONTEXT = self.last
+        return self.last
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        global _GENSCAD_GLOBAL_CONTEXT
+        _GENSCAD_GLOBAL_CONTEXT = self.a.parent_entity
+        return False
 
 
 class ScadObj(ScadEntity):
