@@ -83,33 +83,33 @@ output = model.gen()
 Output:
 
 ```
-    cube(size=[25, 25, 25], center=false);
-    translate([100, 0, 0]) {
-      cube(size=[20, 20, 20], center=false);
-      cylinder(100, r=5, center=true);
-    }
-    translate([200, 0, 0]) {
-      cube(size=[20, 20, 20], center=false);
-      cylinder(100, r=5, center=true);
-    }
-    translate([300, 0, 0]) {
-      cube(size=[20, 20, 20], center=false);
-      cylinder(100, r=5, center=true);
+cube(size=[25, 25, 25], center=false);
+translate([100, 0, 0]) {
+  cube(size=[20, 20, 20], center=false);
+  cylinder(100, r=5, center=true);
+}
+translate([200, 0, 0]) {
+  cube(size=[20, 20, 20], center=false);
+  cylinder(100, r=5, center=true);
+}
+translate([300, 0, 0]) {
+  cube(size=[20, 20, 20], center=false);
+  cylinder(100, r=5, center=true);
 ```
 
 ### Using Python functions
 
 ```python
-        def helper_fn():
-            s.cylinder(10, r=16, center=True)
-            with s.translate([0, 0, -10]):
-                s.cylinder(30, r=8, center=True)
+def helper_fn():
+    s.cylinder(10, r=16, center=True)
+    with s.translate([0, 0, -10]):
+        s.cylinder(30, r=8, center=True)
 
-        with s.ScadContext() as model:
-            for x in [100, 200, 300]:
-                with s.translate([x, 0, 0]):
-                    helper_fn()
-        output = model.gen()
+with s.ScadContext() as model:
+    for x in [100, 200, 300]:
+        with s.translate([x, 0, 0]):
+            helper_fn()
+output = model.gen()
 ```
 
 Output:
