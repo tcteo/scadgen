@@ -96,6 +96,22 @@ class TestContext(unittest.TestCase):
               cube(size=[20, 20, 20], center=false);
             }'''))
 
+    def test_nested_translate(self):
+        '''Basic usage.'''
+        with s.ScadContext() as model:
+            with s.translate([100, 100, 100]):
+                s.cube(size=[10, 10, 10], center=False)
+                with s.translate([50, 50, 50]):
+                  s.cube(size=[20, 20, 20], center=False)
+        output = model.gen()
+        self.assertEqual(output, textwrap.dedent('''\
+            translate([100, 100, 100]) {
+              cube(size=[10, 10, 10], center=false);
+              translate([50, 50, 50]) {
+                cube(size=[20, 20, 20], center=false);
+              }
+            }'''))
+
     def test_basic2_obj(self):
         '''Slightly more complex basic usage.'''
         with s.ScadContext() as model:
