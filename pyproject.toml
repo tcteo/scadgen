@@ -4,11 +4,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "scadgen"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Python library for generating OpenSCAD 3D models."
 license = "MIT"
 authors = [
-  "TC Teo <tsechin@tsechin.com>",
+  "TC Teo <scadgen-pypi-011ecc47@tsechin.com>",
 ]
 readme = "README.md"
 homepage = "https://github.com/tcteo/scadgen"
